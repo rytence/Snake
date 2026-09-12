@@ -1,6 +1,7 @@
 """A Pygame snake game. Run with: python main.py."""
 
 import random
+from pathlib import Path
 
 import pygame
 
@@ -18,6 +19,37 @@ DIRECTIONS = {
     pygame.K_LEFT: (-1, 0), pygame.K_a: (-1, 0),
     pygame.K_RIGHT: (1, 0), pygame.K_d: (1, 0),
 }
+
+
+class SoundEffects:
+    def __init__(self):
+        self.muted = False
+        self.sounds = {}
+        if not pygame.mixer.get_init():
+            return
+        folder = Path(__file__).resolve().parent / "assets" / "sounds"
+        for name, filename in {
+            "eat": "bing_01.mp3",
+            "crash": "bung_01.mp3",
+            "restart": "bing_02.mp3",
+            "win": "bing_02.mp3",
+        }.items():
+            try:
+                sound = pygame.mixer.Sound(str(folder / filename))
+                sound.set_volume(0.55)
+                self.sounds[name] = sound
+            except (pygame.error, OSError):
+                # A missing sound should not prevent playing the game.
+                pass
+
+    def play(self, name):
+        if not self.muted and pygame.mixer.get_init() and name in self.sounds:
+            self.sounds[name].play()
+
+    def toggle_mute(self):
+        self.muted = not self.muted
+        if self.muted and pygame.mixer.get_init():
+            pygame.mixer.stop()
 
 
 class SnakeGame:
@@ -66,7 +98,7 @@ class SnakeGame:
         body = self.snake if eating else self.snake[:-1]
         if not (0 <= head[0] < COLS and 0 <= head[1] < ROWS) or head in body:
             self.game_over = True
-            return
+            return "crash"
         self.snake.insert(0, head)
         if eating:
             self.score += 1
@@ -74,6 +106,8 @@ class SnakeGame:
             self.food = self.spawn_food()
             if self.food is None:
                 self.won = self.game_over = True
+                return "win"
+            return "eat"
         else:
             self.snake.pop()
 
@@ -83,11 +117,14 @@ def cell_rect(position):
     return pygame.Rect(x * CELL, HEADER + y * CELL, CELL, CELL)
 
 
-def draw(screen, game, font, small_font, title_font):
+def draw(screen, game, font, small_font, title_font, sounds=None):
     screen.fill(BACKGROUND)
     label = font.render(f"SNAKE    Score: {game.score}    Best: {game.best}", True, TEXT)
     screen.blit(label, (16, 10))
-    label = small_font.render("Arrows / WASD: move    Space: pause    R: restart    Esc: quit", True, MUTED)
+    audio_status = "off" if sounds is None or not sounds.sounds else "muted" if sounds.muted else "on"
+    label = small_font.render(
+        f"Arrows/WASD: move   Space: pause   R: restart   M: sound {audio_status}   Esc: quit",
+        True, MUTED)
     screen.blit(label, (16, 43))
     pygame.draw.rect(screen, (21, 30, 42), (0, HEADER, WIDTH, ROWS * CELL))
     for x in range(0, WIDTH, CELL):
@@ -118,6 +155,7 @@ def draw(screen, game, font, small_font, title_font):
 
 
 def main():
+    pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.init()
     try:
         screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -127,6 +165,7 @@ def main():
         small_font = pygame.font.Font(None, 22)
         title_font = pygame.font.Font(None, 58)
         game = SnakeGame()
+        sounds = SoundEffects()
         elapsed = 0.0
         running = True
         while running:
@@ -141,7 +180,12 @@ def main():
                         running = False
                     elif event.key == pygame.K_r:
                         game.reset()
+                        if pygame.mixer.get_init():
+                            pygame.mixer.stop()
+                        sounds.play("restart")
                         elapsed = 0.0
+                    elif event.key == pygame.K_m:
+                        sounds.toggle_mute()
                     elif event.key == pygame.K_SPACE and not game.game_over:
                         game.paused = not game.paused
                         elapsed = 0.0
@@ -153,8 +197,10 @@ def main():
                 elapsed = 0.0
             elif elapsed >= game.step_interval:
                 elapsed -= game.step_interval
-                game.step()
-            draw(screen, game, font, small_font, title_font)
+                sound_event = game.step()
+                if sound_event is not None:
+                    sounds.play(sound_event)
+            draw(screen, game, font, small_font, title_font, sounds)
             pygame.display.flip()
     finally:
         pygame.quit()
