@@ -47,3 +47,9 @@ The game includes looping background music and sound effects for eating, crashin
 - `requirements.txt`: Pygame dependency (`>=2.5.2,<3`).
 - `assets/sounds/`: music and sound effects.
 - [Sound credits](assets/sounds/CREDITS.md): audio sources and licensing details.
+
+## License
+
+The project's source code and documentation are licensed under the [MIT License](LICENSE). You may use, modify, and distribute them, including commercially, provided you retain the copyright and permission notices. The software is provided without warranty.
+
+The bundled music and sound effects remain under CC0 1.0, as documented in [Sound credits](assets/sounds/CREDITS.md). Third-party dependencies retain their own licenses.
