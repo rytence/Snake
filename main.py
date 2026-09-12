@@ -25,6 +25,7 @@ class SoundEffects:
     def __init__(self):
         self.muted = False
         self.sounds = {}
+        self.music_loaded = False
         if not pygame.mixer.get_init():
             return
         folder = Path(__file__).resolve().parent / "assets" / "sounds"
@@ -41,6 +42,14 @@ class SoundEffects:
             except (pygame.error, OSError):
                 # A missing sound should not prevent playing the game.
                 pass
+        try:
+            pygame.mixer.music.load(str(folder / "gone_fishin.mp3"))
+            # Keep the banjo underneath the goofy sound effects.
+            pygame.mixer.music.set_volume(0.25)
+            pygame.mixer.music.play(loops=-1)
+            self.music_loaded = True
+        except (pygame.error, OSError):
+            pass
 
     def play(self, name):
         if not self.muted and pygame.mixer.get_init() and name in self.sounds:
@@ -48,8 +57,14 @@ class SoundEffects:
 
     def toggle_mute(self):
         self.muted = not self.muted
-        if self.muted and pygame.mixer.get_init():
-            pygame.mixer.stop()
+        if pygame.mixer.get_init():
+            if self.muted:
+                pygame.mixer.stop()
+            if self.music_loaded:
+                if self.muted:
+                    pygame.mixer.music.pause()
+                else:
+                    pygame.mixer.music.unpause()
 
 
 class SnakeGame:
@@ -121,7 +136,8 @@ def draw(screen, game, font, small_font, title_font, sounds=None):
     screen.fill(BACKGROUND)
     label = font.render(f"SNAKE    Score: {game.score}    Best: {game.best}", True, TEXT)
     screen.blit(label, (16, 10))
-    audio_status = "off" if sounds is None or not sounds.sounds else "muted" if sounds.muted else "on"
+    audio_available = sounds is not None and (sounds.sounds or sounds.music_loaded)
+    audio_status = "off" if not audio_available else "muted" if sounds.muted else "on"
     label = small_font.render(
         f"Arrows/WASD: move   Space: pause   R: restart   M: sound {audio_status}   Esc: quit",
         True, MUTED)

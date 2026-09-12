@@ -11,3 +11,11 @@ The audio is stored locally, so playing the game does not require internet acces
 | bing_02.mp3 | Restarting / winning | https://opengameart.org/sites/default/files/bing_02.mp3 |
 
 Files are unmodified except for renaming bing_01_0.mp3 to bing_01.mp3.
+
+## Background music
+
+"Gone Fishin'" by Memoraphile @ You're Perfect Studio.
+Source: https://opengameart.org/content/gone-fishin
+Used under the offered [CC0 1.0 license](https://creativecommons.org/publicdomain/zero/1.0/).
+Original download: https://opengameart.org/sites/default/files/gone_fishin_by_memoraphile_CC0_0.mp3
+Stored unmodified as `gone_fishin.mp3`; played on repeat at reduced volume.
